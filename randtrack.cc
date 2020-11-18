@@ -44,10 +44,7 @@ class sample {
 // key value is "unsigned".  
 hash<sample,unsigned> h;
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER
-
-int  
-main (int argc, char* argv[]){
+int main (int argc, char* argv[]){
   int i,j,k;
   int rnum;
   unsigned key;

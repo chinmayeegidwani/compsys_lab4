@@ -45,11 +45,11 @@ class sample {
 hash<sample,unsigned> h;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-void* process_one_seed(int seed);
-void* process_two_seeds(int seeds);
+void* process_one_seed(void* seed);
+void* process_two_seeds(void* seed);
 pthread_t thread1, thread2, thread3, thread4;
 
-main (int argc, char* argv[]){
+int main (int argc, char* argv[]){
   int i,j,k;
   int rnum;
   unsigned key;
@@ -94,7 +94,7 @@ main (int argc, char* argv[]){
 
           // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
           key = rnum % RAND_NUM_UPPER_BOUND;
-
+        pthread_mutex_lock(&mutex);
           // if this sample has not been counted before
           if (!(s = h.lookup(key))){
       
@@ -105,22 +105,23 @@ main (int argc, char* argv[]){
 
           // increment the count for the sample
           s->count++;
+          pthread_mutex_unlock(&mutex);
         }
 
 
     }
   } else if(num_threads==2){
     // call 2 seed func twice
-      pthread_create(&thread1, NULL, process_two_seeds, 2);
-      pthread_create(&thread1, NULL, process_two_seeds, 0);
+      pthread_create(&thread1, NULL, process_two_seeds, &seed[0]);
+      pthread_create(&thread1, NULL, process_two_seeds, &seed[1]);
 
       pthread_join(thread1, NULL);
       pthread_join(thread2, NULL);
   } else if(num_threads == 4){
-      pthread_create(&thread1, NULL, process_one_seed, 0);
-      pthread_create(&thread1, NULL, process_one_seed, 1);
-      pthread_create(&thread1, NULL, process_one_seed, 2);
-      pthread_create(&thread1, NULL, process_one_seed, 3);
+      pthread_create(&thread1, NULL, process_one_seed, &seed[0]);
+      pthread_create(&thread1, NULL, process_one_seed, &seed[1]);
+      pthread_create(&thread1, NULL, process_one_seed, &seed[3]);
+      pthread_create(&thread1, NULL, process_one_seed, &seed[4]);
     //call 1 seed func 4 times
 
       pthread_join(thread1, NULL);
@@ -135,9 +136,10 @@ main (int argc, char* argv[]){
   h.print();
 }
 
-void* process_one_seed(int seed){
+void* process_one_seed(void* seed){
     // process streams starting with different initial numbers
-  int rnum = seed;
+  int seed_int = *((int *) seed);
+  int rnum = seed_int;
   unsigned key;
   sample *s;
 
@@ -165,12 +167,14 @@ void* process_one_seed(int seed){
     s->count++;
     pthread_mutex_unlock(&mutex);
   }
+  //return;
 }
 
 
 
-void* process_two_seeds(int seeds){
-  int rnum = seeds;
+void* process_two_seeds(void* seed){
+  int seed_int = *((int *) seed);
+  int rnum = seed_int;
   unsigned key;
   sample *s;
 
@@ -202,6 +206,6 @@ void* process_two_seeds(int seeds){
     }
     rnum++;
   }
-
+  //return seed;
 }
 
