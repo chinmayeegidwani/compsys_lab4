@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "defs.h"
 #include "hash.h"
@@ -14,11 +15,11 @@
  * Please fill in the following team struct 
  */
 team_t team = {
-    "Team Name",                  /* Team name */
+    "N-Synch",                  /* Team name */
 
-    "AAA BBB",                    /* Member full name */
-    "9999999999",                 /* Member student number */
-    "AAABBB@CCC",                 /* Member email address */
+    "Chinmayee Gidwani",                    /* Member full name */
+    "1003062473",                 /* Member student number */
+    "chinmayee.gidwani@mail.utoronto.ca",                 /* Member email address */
 };
 
 unsigned num_threads;
@@ -42,6 +43,8 @@ class sample {
 // the element and key value here: element is "class sample" and
 // key value is "unsigned".  
 hash<sample,unsigned> h;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER
 
 int  
 main (int argc, char* argv[]){
