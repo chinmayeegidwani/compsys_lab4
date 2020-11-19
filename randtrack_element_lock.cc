@@ -40,13 +40,14 @@ class sample {
   void print(FILE *f){printf("%d %d\n",my_key,count);}
 };
 
+
 // This instantiates an empty hash table
 // it is a C++ template, which means we define the types for
 // the element and key value here: element is "class sample" and
 // key value is "unsigned".  
 hash<sample,unsigned> h;
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex[RAND_NUM_UPPER_BOUND];
 void* process_seeds(void* args);
 pthread_t thread1, thread2, thread3, thread4;
 
@@ -82,7 +83,9 @@ int main (int argc, char* argv[]){
 
   int seed[4] = {0, 1, 2, 3};
 
-
+  for(int i=0; i<RAND_NUM_UPPER_BOUND; i++){
+    pthread_mutex_init(&mutex[i], NULL);
+  }
 
 
   if(num_threads==1){ //business as usual
@@ -100,7 +103,7 @@ int main (int argc, char* argv[]){
 
           // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
           key = rnum % RAND_NUM_UPPER_BOUND;
-        pthread_mutex_lock(&mutex);
+          pthread_mutex_lock(&mutex[key]);
           // if this sample has not been counted before
           if (!(s = h.lookup(key))){
       
@@ -111,7 +114,7 @@ int main (int argc, char* argv[]){
 
           // increment the count for the sample
           s->count++;
-          pthread_mutex_unlock(&mutex);
+          pthread_mutex_unlock(&mutex[key]);
         }
 
 
@@ -177,6 +180,7 @@ void* process_seeds(void* args)
   sample *s;
   int rnum;
 
+
   for(int i=start; i<=end; i++){
     rnum = i;
     // collect a number of samples
@@ -190,6 +194,8 @@ void* process_seeds(void* args)
       // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
       key = rnum % RAND_NUM_UPPER_BOUND;
 
+      /******************* CRIT SECTION BEGIN *****************/
+      pthread_mutex_lock(&mutex[key]); //lock before using hash table
       // if this sample has not been counted before
       if (!(s = h.lookup(key))){
 
@@ -197,6 +203,9 @@ void* process_seeds(void* args)
           s = new sample(key);
           h.insert(s);
       }
+      pthread_mutex_unlock(&mutex[key]);
+
+      /*******************CRIT SECTION END ********************/
 
       /******************* CRIT SECTION BEGIN *****************/
       pthread_mutex_lock(&(s->sample_mutex));
@@ -204,6 +213,7 @@ void* process_seeds(void* args)
       s->count++;
       pthread_mutex_unlock(&(s->sample_mutex));
       /*********************CRIT SECTION END *********************/
+
     }
   }
 
