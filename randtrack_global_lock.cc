@@ -45,7 +45,6 @@ class sample {
 hash<sample,unsigned> h;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-void* process_one_seed(void* seed);
 void* process_seeds(void* args);
 pthread_t thread1, thread2, thread3, thread4;
 
@@ -116,34 +115,49 @@ int main (int argc, char* argv[]){
 
     }
   } else if(num_threads==2){
-    // call 2 seed func twice
-
+    // call seed func twice
       threadInfo t1;
       t1.start_seed = 0;
       t1.end_seed = 1;
 
       threadInfo t2;
-      t1.start_seed = 2;
-      t1.end_seed = 3;
+      t2.start_seed = 2;
+      t2.end_seed = 3; 
 
-      //printf("creating thread");
-      pthread_create(&thread1, NULL, process_seeds, &t1); // 0, 1
-      pthread_create(&thread2, NULL, process_seeds, &t2); // 2, 3
+      pthread_create(&thread1, NULL, process_seeds, &t1);
+      pthread_create(&thread2, NULL, process_seeds, &t2); 
 
       pthread_join(thread1, NULL);
       pthread_join(thread2, NULL);
+
   } else if(num_threads == 4){
-    /*
-      pthread_create(&thread1, NULL, process_one_seed, &seed[0]);
-      pthread_create(&thread2, NULL, process_one_seed, &seed[1]);
-      pthread_create(&thread3, NULL, process_one_seed, &seed[3]);
-      pthread_create(&thread4, NULL, process_one_seed, &seed[4]);
-    //call 1 seed func 4 times
+      threadInfo t1;
+      t1.start_seed = 0;
+      t1.end_seed = 0;
+
+      threadInfo t2;
+      t2.start_seed = 1;
+      t2.end_seed = 1;
+
+      threadInfo t3;
+      t3.start_seed = 2;
+      t3.end_seed = 2;
+
+      threadInfo t4;
+      t4.start_seed = 3;
+      t4.end_seed = 3; 
+
+
+      pthread_create(&thread1, NULL, process_seeds, &t1);
+      pthread_create(&thread2, NULL, process_seeds, &t2);
+      pthread_create(&thread3, NULL, process_seeds, &t3);
+      pthread_create(&thread4, NULL, process_seeds, &t4);
+    //call seed func 4 times
 
       pthread_join(thread1, NULL);
       pthread_join(thread2, NULL);
       pthread_join(thread3, NULL);
-      pthread_join(thread4, NULL); */
+      pthread_join(thread4, NULL);
   }
 
 
@@ -152,7 +166,8 @@ int main (int argc, char* argv[]){
   h.print();
 }
 
-void* process_seeds(void* args){ //0
+void* process_seeds(void* args)
+{
   threadInfo* thread_info = (threadInfo*) args;
   int start = thread_info -> start_seed;
   int end = thread_info -> end_seed;
@@ -160,7 +175,7 @@ void* process_seeds(void* args){ //0
   sample *s;
   int rnum;
 
-  for(int i=start; i<end; i++){
+  for(int i=start; i<=end; i++){
     rnum = i;
     // collect a number of samples
     for (int j=0; j<SAMPLES_TO_COLLECT; j++){
@@ -173,6 +188,7 @@ void* process_seeds(void* args){ //0
       // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
       key = rnum % RAND_NUM_UPPER_BOUND;
 
+      /******************* CRIT SECTION BEGIN *****************/
       pthread_mutex_lock(&mutex); //lock before using hash table
       // if this sample has not been counted before
       if (!(s = h.lookup(key))){
@@ -185,8 +201,8 @@ void* process_seeds(void* args){ //0
       // increment the count for the sample
       s->count++;
       pthread_mutex_unlock(&mutex);
+      /*********************CRIT SECTION END *********************/
     }
   }
-  return (void*) 0;
-}
 
+}
