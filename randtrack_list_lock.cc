@@ -44,7 +44,8 @@ class sample {
 // key value is "unsigned".  
 hash<sample,unsigned> h;
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+// initialize list of mutexes
+pthread_mutex_t mutex[RAND_NUM_UPPER_BOUND];
 void* process_one_seed(void* seed);
 void* process_two_seeds(void* seed);
 pthread_t thread1, thread2, thread3, thread4;
@@ -63,11 +64,12 @@ int main (int argc, char* argv[]){
   printf( "Student 1 Email: %s\n", team.email1 );
   printf( "\n" );
 
+  printf("look for program arguments");
   // Parse program arguments
-  if (argc != 3){
+  /*if (argc != 3){
     printf("Usage: %s <num_threads> <samples_to_skip>\n", argv[0]);
     exit(1);  
-  }
+  } */
   sscanf(argv[1], " %d", &num_threads); // not used in this single-threaded version
   sscanf(argv[2], " %d", &samples_to_skip);
 
@@ -76,10 +78,14 @@ int main (int argc, char* argv[]){
 
   int seed[4] = {0, 1, 2, 3};
 
+  for(int i=0; i<RAND_NUM_UPPER_BOUND; i++){
+    pthread_mutex_init(&mutex[i], NULL);
+  }
 
 
 
   if(num_threads==1){ //business as usual
+      printf("business as usual");
     // process streams starting with different initial numbers
       for (i=0; i<NUM_SEED_STREAMS; i++){
         rnum = i;
@@ -94,7 +100,7 @@ int main (int argc, char* argv[]){
 
           // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
           key = rnum % RAND_NUM_UPPER_BOUND;
-        pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex[key]);
           // if this sample has not been counted before
           if (!(s = h.lookup(key))){
       
@@ -105,7 +111,7 @@ int main (int argc, char* argv[]){
 
           // increment the count for the sample
           s->count++;
-          pthread_mutex_unlock(&mutex);
+          pthread_mutex_unlock(&mutex[key]);
         }
 
 
@@ -155,7 +161,7 @@ void* process_one_seed(void* seed){
     // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
     key = rnum % RAND_NUM_UPPER_BOUND;
 
-    pthread_mutex_lock(&mutex); //lock before using hash table
+    pthread_mutex_lock(&mutex[key]); //lock before using hash table
     // if this sample has not been counted before
     if (!(s = h.lookup(key))){
 
@@ -166,7 +172,7 @@ void* process_one_seed(void* seed){
 
     // increment the count for the sample
     s->count++;
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutex[key]);
   }
   return seed;
 }
@@ -192,7 +198,7 @@ void* process_two_seeds(void* seed){
       // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
       key = rnum % RAND_NUM_UPPER_BOUND;
 
-      pthread_mutex_lock(&mutex); //lock before using hash table
+      pthread_mutex_lock(&mutex[key]); //lock before using hash table
       // if this sample has not been counted before
       if (!(s = h.lookup(key))){
 
@@ -203,7 +209,7 @@ void* process_two_seeds(void* seed){
 
       // increment the count for the sample
       s->count++;
-      pthread_mutex_unlock(&mutex);
+      pthread_mutex_unlock(&mutex[key]);
     }
     rnum++;
   }

@@ -42,9 +42,10 @@ class sample {
 // it is a C++ template, which means we define the types for
 // the element and key value here: element is "class sample" and
 // key value is "unsigned".  
-hash<sample,unsigned> h;
+hash<sample,unsigned> h[4];
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+// initialize list of mutexes
+pthread_mutex_t mutex[RAND_NUM_UPPER_BOUND];
 void* process_one_seed(void* seed);
 void* process_two_seeds(void* seed);
 pthread_t thread1, thread2, thread3, thread4;
@@ -63,23 +64,25 @@ int main (int argc, char* argv[]){
   printf( "Student 1 Email: %s\n", team.email1 );
   printf( "\n" );
 
+  printf("look for program arguments");
   // Parse program arguments
-  if (argc != 3){
+  /*if (argc != 3){
     printf("Usage: %s <num_threads> <samples_to_skip>\n", argv[0]);
     exit(1);  
-  }
+  } */
   sscanf(argv[1], " %d", &num_threads); // not used in this single-threaded version
   sscanf(argv[2], " %d", &samples_to_skip);
 
   // initialize a 16K-entry (2**14) hash of empty lists
-  h.setup(14);
+  //h.setup(14);
 
   int seed[4] = {0, 1, 2, 3};
 
 
 
-
   if(num_threads==1){ //business as usual
+      h[0].setup(14);
+      printf("business as usual");
     // process streams starting with different initial numbers
       for (i=0; i<NUM_SEED_STREAMS; i++){
         rnum = i;
@@ -94,18 +97,18 @@ int main (int argc, char* argv[]){
 
           // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
           key = rnum % RAND_NUM_UPPER_BOUND;
-        pthread_mutex_lock(&mutex);
+
           // if this sample has not been counted before
-          if (!(s = h.lookup(key))){
+          if (!(s = h[0].lookup(key))){
       
       // insert a new element for it into the hash table
       s = new sample(key);
-      h.insert(s);
+      h[0].insert(s);
           }
 
           // increment the count for the sample
           s->count++;
-          pthread_mutex_unlock(&mutex);
+
         }
 
 
@@ -118,6 +121,7 @@ int main (int argc, char* argv[]){
 
       pthread_join(thread1, NULL);
       pthread_join(thread2, NULL);
+      
   } else if(num_threads == 4){
       pthread_create(&thread1, NULL, process_one_seed, &seed[0]);
       pthread_create(&thread1, NULL, process_one_seed, &seed[1]);
@@ -143,6 +147,7 @@ void* process_one_seed(void* seed){
   int rnum = seed_int;
   unsigned key;
   sample *s;
+  h[seed_int].setup(14);
 
   // collect a number of samples
   for (int j=0; j<SAMPLES_TO_COLLECT; j++){
@@ -155,18 +160,18 @@ void* process_one_seed(void* seed){
     // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
     key = rnum % RAND_NUM_UPPER_BOUND;
 
-    pthread_mutex_lock(&mutex); //lock before using hash table
+
     // if this sample has not been counted before
-    if (!(s = h.lookup(key))){
+    if (!(s = h[seed_int].lookup(key))){
 
         // insert a new element for it into the hash table
         s = new sample(key);
-        h.insert(s);
+        h[seed_int].insert(s);
     }
 
     // increment the count for the sample
     s->count++;
-    pthread_mutex_unlock(&mutex);
+
   }
   return seed;
 }
@@ -178,6 +183,7 @@ void* process_two_seeds(void* seed){
   int rnum = seed_int;
   unsigned key;
   sample *s;
+  h[seed_int].setup(14);
 
 
   for(int i=0; i<2; i++){
@@ -192,18 +198,17 @@ void* process_two_seeds(void* seed){
       // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
       key = rnum % RAND_NUM_UPPER_BOUND;
 
-      pthread_mutex_lock(&mutex); //lock before using hash table
       // if this sample has not been counted before
-      if (!(s = h.lookup(key))){
+      if (!(s = h[seed_int].lookup(key))){
 
           // insert a new element for it into the hash table
           s = new sample(key);
-          h.insert(s);
+          h[seed_int].insert(s);
       }
 
       // increment the count for the sample
       s->count++;
-      pthread_mutex_unlock(&mutex);
+
     }
     rnum++;
   }
