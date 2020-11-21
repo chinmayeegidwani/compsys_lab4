@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -g -lpthread -pthread -fgnu-tm
 
-all: randtrack randtrack_global_lock randtrack_tm randtrack_list_lock randtrack_element_lock
+all: randtrack randtrack_global_lock randtrack_tm randtrack_list_lock randtrack_element_lock randtrack_reduction
 
 randtrack: list.h hash.h defs.h randtrack.cc
 	$(CC) $(CFLAGS) randtrack.cc -o randtrack
