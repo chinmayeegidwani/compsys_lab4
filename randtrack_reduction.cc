@@ -86,16 +86,34 @@ int main (int argc, char* argv[]){
 
 
   if(num_threads==1){ //business as usual
-      threadInfo t1;
-      t1.start_seed = 0;
-      t1.end_seed = 1;
-      h1.setup(14);
-      t1.thread_hash = &h1;
+    // process streams starting with different initial numbers
+      for (i=0; i<NUM_SEED_STREAMS; i++){
+        rnum = i;
 
-      pthread_create(&thread1, NULL, process_seeds, &t1);
+        // collect a number of samples
+        for (j=0; j<SAMPLES_TO_COLLECT; j++){
+
+          // skip a number of samples
+          for (k=0; k<samples_to_skip; k++){
+      rnum = rand_r((unsigned int*)&rnum);
+          }
+
+          // force the sample to be within the range of 0..RAND_NUM_UPPER_BOUND-1
+          key = rnum % RAND_NUM_UPPER_BOUND;
+          // if this sample has not been counted before
+          if (!(s = h.lookup(key))){
+      
+            // insert a new element for it into the hash table
+            s = new sample(key);
+            h.insert(s);
+          }
+
+          // increment the count for the sample
+          s->count++;
+        }
 
 
-      pthread_join(thread1, NULL);
+    }
   } else if(num_threads==2){
     // call seed func twice
       threadInfo t1;
@@ -153,24 +171,37 @@ int main (int argc, char* argv[]){
       pthread_join(thread4, NULL);
   }
 
+  // stitch the tables back together
+  // ignore if num_threads = 1
+  sample *thread_s;
+
+  for(int i=0; i<RAND_NUM_UPPER_BOUND; i++){
+    if(num_threads == 2){
+      if(thread_s = h1.lookup(i)){
+        // if this number exists in the thread table
+
+        if(!(s = h.lookup(i))){
+          // if this num does not exist in the main table, add
+          s = new sample(i);
+          h.insert(s);
+        }
+        s->count = thread_s -> count;
+      }
+
+      if(thread_s = h2.lookup(i)){
+        // if this number exists in the thread table
+
+        if(!(s = h.lookup(i))){
+          // if this num does not exist in the main table, add
+          s = new sample(i);
+          h.insert(s);
+        }
+        s->count = thread_s -> count;
+      }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    }
+  }
 
   // print a list of the frequency of all samples
   h.print();
