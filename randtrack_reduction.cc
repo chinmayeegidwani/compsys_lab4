@@ -171,7 +171,13 @@ int main (int argc, char* argv[]){
       pthread_join(thread4, NULL);
   }
 
-  // stitch the tables back together
+  /* stitch the tables back together
+   * iterate through samples
+   * check if sample is in the thread table
+   * then update in global hash table
+   */
+
+
   // ignore if num_threads = 1
   sample *thread_s;
 
@@ -185,7 +191,7 @@ int main (int argc, char* argv[]){
           s = new sample(i);
           h.insert(s);
         }
-        s->count = thread_s -> count;
+        s->count += thread_s -> count;
       }
 
       if(thread_s = h2.lookup(i)){
@@ -196,10 +202,54 @@ int main (int argc, char* argv[]){
           s = new sample(i);
           h.insert(s);
         }
-        s->count = thread_s -> count;
+        s->count += thread_s -> count;
+      }
+    }
+
+    if(num_threads == 4){
+      if(thread_s = h1.lookup(i)){
+        // if this number exists in the thread table
+
+        if(!(s = h.lookup(i))){
+          // if this num does not exist in the main table, add
+          s = new sample(i);
+          h.insert(s);
+        }
+        s->count += thread_s -> count;
       }
 
+      if(thread_s = h2.lookup(i)){
+        // if this number exists in the thread table
 
+        if(!(s = h.lookup(i))){
+          // if this num does not exist in the main table, add
+          s = new sample(i);
+          h.insert(s);
+        }
+        s->count += thread_s -> count;
+      }
+
+      if(thread_s = h3.lookup(i)){
+        // if this number exists in the thread table
+
+        if(!(s = h.lookup(i))){
+          // if this num does not exist in the main table, add
+          s = new sample(i);
+          h.insert(s);
+        }
+        s->count += thread_s -> count;
+      }
+
+      if(thread_s = h4.lookup(i)){
+        // if this number exists in the thread table
+
+        if(!(s = h.lookup(i))){
+          // if this num does not exist in the main table, add
+          s = new sample(i);
+          h.insert(s);
+        }
+        s->count += thread_s -> count;
+      }
     }
   }
 
